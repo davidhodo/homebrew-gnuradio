@@ -4,7 +4,7 @@ class Gnuradio < Formula
   homepage 'http://gnuradio.org'
   url  'http://gnuradio.org/releases/gnuradio/gnuradio-3.6.1.tar.gz'
   sha1 'ee4c40b366d94887511eefa6ce52df4bdbc9d105'
-  head 'git://gnuradio.org/gnuradio.git'
+  head 'http://gnuradio.org/git/gnuradio.git'
 
   depends_on 'apple-gcc42' => :build
   depends_on 'cmake' => :build
@@ -13,7 +13,6 @@ class Gnuradio < Formula
   depends_on 'numpy' => :python
   depends_on 'scipy' => :python
   depends_on 'matplotlib' => :python
-  depends_on 'python'
   depends_on 'boost'
   depends_on 'cppunit'
   depends_on 'gsl'
