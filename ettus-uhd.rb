@@ -5,7 +5,7 @@ class EttusUhd < Formula
   url 'https://github.com/EttusResearch/uhd/archive/release_003_007_003.tar.gz'
   sha1 'bd9ae0dfb2777bca2a22f9e918b707213b35276a'
   version '3.7.3'
-  head 'git@github.com:EttusResearch/uhd.git'wg
+  head 'git@github.com:EttusResearch/uhd.git'
 
   depends_on 'cmake' => :build
   depends_on 'automake' => :build
