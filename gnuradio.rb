@@ -2,11 +2,10 @@ require 'formula'
 
 class Gnuradio < Formula
   homepage 'http://gnuradio.org'
-  url  'http://gnuradio.org/releases/gnuradio/gnuradio-3.7.2.1.tar.gz'
-  sha1 '33f18b6837dfee9d69b7799a48b4815288d4c5f9'
+  url  'https://github.com/gnuradio/gnuradio/archive/v3.7.5.1.tar.gz'
+  sha1 'afd4d211124fa3fd4d9e80b111590a269b11e6f7'
   head 'http://gnuradio.org/git/gnuradio.git'
 
-  depends_on 'apple-gcc42' => :build
   depends_on 'cmake' => :build
   depends_on 'Cheetah' => :python
   depends_on 'lxml' => :python
@@ -26,107 +25,18 @@ class Gnuradio < Formula
   depends_on 'pyqwt' if ARGV.include?('--with-qt')
   depends_on 'doxygen' if ARGV.include?('--with-docs')
 
-  fails_with :clang do
-    build 421
-    cause "Fails to compile .S files."
-  end
-
-  def options
-    [
-      ['--with-qt', 'Build gr-qtgui.'],
-      ['--with-docs', 'Build docs.']
-    ]
-  end
-
-  def patches
-    DATA
-  end
-
   def install
-
-	  # Force compilation with gcc-4.2
-	  ENV['CC'] = '/usr/local/bin/gcc-4.2'
-	  ENV['LD'] = '/usr/local/bin/gcc-4.2'
-	  ENV['CXX'] = '/usr/local/bin/g++-4.2'
-
-    mkdir 'build' do
-      args = ["-DCMAKE_PREFIX_PATH=#{prefix}", "-DQWT_INCLUDE_DIRS=#{HOMEBREW_PREFIX}/lib/qwt.framework/Headers"] + std_cmake_args
-      args << '-DENABLE_GR_QTGUI=OFF' unless ARGV.include?('--with-qt')
-      args << '-DENABLE_DOXYGEN=OFF' unless ARGV.include?('--with-docs')
-
-      # From opencv.rb
-      python_prefix = `python-config --prefix`.strip
-      # Python is actually a library. The libpythonX.Y.dylib points to this lib, too.
-      if File.exist? "#{python_prefix}/Python"
-        # Python was compiled with --framework:
-        args << "-DPYTHON_LIBRARY='#{python_prefix}/Python'"
-        if !MacOS::CLT.installed? and python_prefix.start_with? '/System/Library'
-          # For Xcode-only systems, the headers of system's python are inside of Xcode
-          args << "-DPYTHON_INCLUDE_DIR='#{MacOS.sdk_path}/System/Library/Frameworks/Python.framework/Versions/2.7/Headers'"
-        else
-          args << "-DPYTHON_INCLUDE_DIR='#{python_prefix}/Headers'"
-        end
-      else
-        python_lib = "#{python_prefix}/lib/lib#{which_python}"
-        if File.exists? "#{python_lib}.a"
-          args << "-DPYTHON_LIBRARY='#{python_lib}.a'"
-        else
-          args << "-DPYTHON_LIBRARY='#{python_lib}.dylib'"
-        end
-        args << "-DPYTHON_INCLUDE_DIR='#{python_prefix}/include/#{which_python}'"
-      end
-      args << "-DPYTHON_PACKAGES_PATH='#{lib}/#{which_python}/site-packages'"
-
-      system 'cmake', '..', *args
-      system 'make'
-      system 'make install'
-    end
+    mkdir "build"
+    cd "build"
+    system "cmake","../","-DCMAKE_INSTALL_PREFIX=#{prefix}",*std_cmake_args
+    # system "cmake", ".", *std_cmake_args
+    system "make install" # if this fails, try separate make/make install steps
   end
 
-  def python_path
-    python = Formula.factory('python')
-    kegs = python.rack.children.reject { |p| p.basename.to_s == '.DS_Store' }
-    kegs.find { |p| Keg.new(p).linked? } || kegs.last
-  end
-
-  def caveats
-    <<-EOS.undent
-    If you want to use custom blocks, create this file:
-
-    ~/.gnuradio/config.conf
-      [grc]
-      local_blocks_path=/usr/local/share/gnuradio/grc/blocks
-    EOS
-  end
-
-  def which_python
-    "python" + `python -c 'import sys;print(sys.version[:3])'`.strip
+  def test
+    # This test will fail and we won't accept that! It's enough to just replace
+    # "false" with the main program this formula installs, but it'd be nice if you
+    # were more thorough. Run the test with `brew test ettus-uhd`.
+    system "false"
   end
 end
-
-__END__
-diff --git a/grc/CMakeLists.txt b/grc/CMakeLists.txt
-index f54aa4f..db0ce3c 100644
---- a/grc/CMakeLists.txt
-+++ b/grc/CMakeLists.txt
-@@ -25,7 +25,7 @@ include(GrPython)
- GR_PYTHON_CHECK_MODULE("python >= 2.5"     sys          "sys.version.split()[0] >= '2.5'"           PYTHON_MIN_VER_FOUND)
- GR_PYTHON_CHECK_MODULE("Cheetah >= 2.0.0"  Cheetah      "Cheetah.Version >= '2.0.0'"                CHEETAH_FOUND)
- GR_PYTHON_CHECK_MODULE("lxml >= 1.3.6"     lxml.etree   "lxml.etree.LXML_VERSION >= (1, 3, 6, 0)"   LXML_FOUND)
--GR_PYTHON_CHECK_MODULE("pygtk >= 2.10.0"   gtk          "gtk.pygtk_version >= (2, 10, 0)"           PYGTK_FOUND)
-+GR_PYTHON_CHECK_MODULE("pygtk >= 2.10.0"   pygtk        True                                        PYGTK_FOUND)
- GR_PYTHON_CHECK_MODULE("numpy"             numpy        True                                        NUMPY_FOUND)
- 
- ########################################################################
-diff --git a/gr-qtgui/lib/spectrumdisplayform.ui b/gr-qtgui/lib/spectrumdisplayform.ui
-index 049d4ff..a40502b 100644
---- a/gr-qtgui/lib/spectrumdisplayform.ui
-+++ b/gr-qtgui/lib/spectrumdisplayform.ui
-@@ -518,7 +518,6 @@
-   </layout>
-  </widget>
-  <layoutdefault spacing="6" margin="11"/>
-- <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
-  <customwidgets>
-   <customwidget>
-    <class>QwtWheel</class>
